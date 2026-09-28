@@ -1,2 +1,2 @@
-/** Ciclo de vida, consulta e historico das cobrancas. */
+/** Gestao de cobrancas, suas condicoes derivadas e contratos HTTP. */
 package com.enzoguimaraes.fluxo.charge;

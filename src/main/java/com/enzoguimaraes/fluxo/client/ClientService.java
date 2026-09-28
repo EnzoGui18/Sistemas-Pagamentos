@@ -8,7 +8,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class ClientService {
@@ -59,6 +63,20 @@ public class ClientService {
                         pageable
                 );
         return ClientPageResponse.from(clients);
+    }
+
+    @Transactional(readOnly = true)
+    public ClientResponse getRequired(UUID id) {
+        return repository.findById(id)
+                .map(ClientResponse::from)
+                .orElseThrow(ClientNotFoundException::new);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<UUID, ClientResponse> findByIds(Set<UUID> ids) {
+        return repository.findAllById(ids).stream()
+                .map(ClientResponse::from)
+                .collect(Collectors.toMap(ClientResponse::id, Function.identity()));
     }
 
     private String normalizeEmail(String email) {

@@ -1,6 +1,9 @@
 package com.enzoguimaraes.fluxo.shared;
 
 import com.enzoguimaraes.fluxo.client.DuplicateClientEmailException;
+import com.enzoguimaraes.fluxo.client.ClientNotFoundException;
+import com.enzoguimaraes.fluxo.charge.ChargeNotFoundException;
+import com.enzoguimaraes.fluxo.charge.InvalidChargeDueDateException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
@@ -87,6 +90,36 @@ class GlobalExceptionHandler {
                 "CLIENT_EMAIL_ALREADY_EXISTS",
                 request,
                 null
+        );
+    }
+
+    @ExceptionHandler(ClientNotFoundException.class)
+    ResponseEntity<ProblemDetail> handleClientNotFound(
+            ClientNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return problem(HttpStatus.NOT_FOUND, exception.getMessage(), "CLIENT_NOT_FOUND", request, null);
+    }
+
+    @ExceptionHandler(ChargeNotFoundException.class)
+    ResponseEntity<ProblemDetail> handleChargeNotFound(
+            ChargeNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return problem(HttpStatus.NOT_FOUND, exception.getMessage(), "CHARGE_NOT_FOUND", request, null);
+    }
+
+    @ExceptionHandler(InvalidChargeDueDateException.class)
+    ResponseEntity<ProblemDetail> handleInvalidDueDate(
+            InvalidChargeDueDateException exception,
+            HttpServletRequest request
+    ) {
+        return problem(
+                HttpStatus.BAD_REQUEST,
+                "Validation failed",
+                "VALIDATION_ERROR",
+                request,
+                List.of(new FieldValidationError("dueDate", exception.getMessage()))
         );
     }
 
