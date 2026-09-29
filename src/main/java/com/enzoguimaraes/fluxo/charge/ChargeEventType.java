@@ -1,6 +1,6 @@
 package com.enzoguimaraes.fluxo.charge;
 
-enum ChargeEventType {
+public enum ChargeEventType {
     CREATED,
     PAID,
     CANCELED

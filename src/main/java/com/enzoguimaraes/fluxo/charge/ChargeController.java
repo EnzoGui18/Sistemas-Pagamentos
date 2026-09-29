@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.util.List;
 import java.util.UUID;
 
 @Validated
@@ -53,5 +54,15 @@ public class ChargeController {
     @GetMapping("/{id}")
     ChargeResponse get(@PathVariable UUID id) {
         return service.get(id);
+    }
+
+    @PostMapping("/{id}/cancellation")
+    ChargeResponse cancel(@PathVariable UUID id) {
+        return service.cancel(id);
+    }
+
+    @GetMapping("/{id}/events")
+    List<ChargeEventResponse> getEvents(@PathVariable UUID id) {
+        return service.getEvents(id);
     }
 }

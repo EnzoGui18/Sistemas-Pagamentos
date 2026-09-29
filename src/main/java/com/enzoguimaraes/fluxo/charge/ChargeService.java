@@ -8,6 +8,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
@@ -15,6 +16,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -102,6 +104,52 @@ public class ChargeService {
         var charge = repository.findById(id).orElseThrow(ChargeNotFoundException::new);
         var client = clientService.getRequired(charge.getClientId());
         return ChargeResponse.from(charge, client, today());
+    }
+
+    @Transactional
+    public ChargeResponse cancel(UUID id) {
+        var charge = findPendingForUpdate(id);
+        var now = clock.instant();
+        charge.cancel(now);
+        eventRepository.save(new ChargeEventEntity(
+                UUID.randomUUID(),
+                charge.getId(),
+                ChargeEventType.CANCELED,
+                now
+        ));
+        var client = clientService.getRequired(charge.getClientId());
+        return ChargeResponse.from(charge, client, today(now));
+    }
+
+    @Transactional(readOnly = true)
+    public List<ChargeEventResponse> getEvents(UUID id) {
+        if (!repository.existsById(id)) {
+            throw new ChargeNotFoundException();
+        }
+        return eventRepository.findHistory(id).stream()
+                .map(ChargeEventResponse::from)
+                .toList();
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public ChargePaymentData completePayment(UUID id, Instant paidAt) {
+        var charge = findPendingForUpdate(id);
+        charge.markPaid(paidAt);
+        eventRepository.save(new ChargeEventEntity(
+                UUID.randomUUID(),
+                charge.getId(),
+                ChargeEventType.PAID,
+                paidAt
+        ));
+        return new ChargePaymentData(charge.getId(), charge.getAmount(), charge.getCurrency());
+    }
+
+    private ChargeEntity findPendingForUpdate(UUID id) {
+        var charge = repository.findByIdForUpdate(id).orElseThrow(ChargeNotFoundException::new);
+        if (charge.getStatus() != ChargeStatus.PENDING) {
+            throw new InvalidChargeTransitionException();
+        }
+        return charge;
     }
 
     private Specification<ChargeEntity> specification(

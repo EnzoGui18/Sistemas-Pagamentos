@@ -36,4 +36,16 @@ class ChargeEventEntity {
         this.type = type;
         this.occurredAt = occurredAt;
     }
+
+    UUID getId() {
+        return id;
+    }
+
+    ChargeEventType getType() {
+        return type;
+    }
+
+    Instant getOccurredAt() {
+        return occurredAt;
+    }
 }

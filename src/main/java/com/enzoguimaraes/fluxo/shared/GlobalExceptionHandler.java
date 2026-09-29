@@ -4,6 +4,8 @@ import com.enzoguimaraes.fluxo.client.DuplicateClientEmailException;
 import com.enzoguimaraes.fluxo.client.ClientNotFoundException;
 import com.enzoguimaraes.fluxo.charge.ChargeNotFoundException;
 import com.enzoguimaraes.fluxo.charge.InvalidChargeDueDateException;
+import com.enzoguimaraes.fluxo.charge.InvalidChargeTransitionException;
+import com.enzoguimaraes.fluxo.payment.IdempotencyKeyConflictException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
@@ -120,6 +122,34 @@ class GlobalExceptionHandler {
                 "VALIDATION_ERROR",
                 request,
                 List.of(new FieldValidationError("dueDate", exception.getMessage()))
+        );
+    }
+
+    @ExceptionHandler(InvalidChargeTransitionException.class)
+    ResponseEntity<ProblemDetail> handleInvalidTransition(
+            InvalidChargeTransitionException exception,
+            HttpServletRequest request
+    ) {
+        return problem(
+                HttpStatus.CONFLICT,
+                exception.getMessage(),
+                "INVALID_CHARGE_TRANSITION",
+                request,
+                null
+        );
+    }
+
+    @ExceptionHandler(IdempotencyKeyConflictException.class)
+    ResponseEntity<ProblemDetail> handleIdempotencyConflict(
+            IdempotencyKeyConflictException exception,
+            HttpServletRequest request
+    ) {
+        return problem(
+                HttpStatus.CONFLICT,
+                exception.getMessage(),
+                "IDEMPOTENCY_KEY_CONFLICT",
+                request,
+                null
         );
     }
 

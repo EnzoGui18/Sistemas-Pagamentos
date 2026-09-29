@@ -106,4 +106,14 @@ class ChargeEntity {
     Instant getUpdatedAt() {
         return updatedAt;
     }
+
+    void markPaid(Instant occurredAt) {
+        status = ChargeStatus.PAID;
+        updatedAt = occurredAt;
+    }
+
+    void cancel(Instant occurredAt) {
+        status = ChargeStatus.CANCELED;
+        updatedAt = occurredAt;
+    }
 }
