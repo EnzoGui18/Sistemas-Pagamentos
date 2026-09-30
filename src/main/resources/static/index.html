@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Fluxo - gestão de clientes, cobranças e pagamentos simulados">
+    <title>Fluxo</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="/js/app.js" defer></script>
+</head>
+<body>
+<header class="app-header">
+    <a class="brand" href="#dashboard" aria-label="Fluxo, ir para o painel">
+        <span class="brand-mark" aria-hidden="true">F</span>
+        <span class="brand-name">fluxo</span>
+    </a>
+    <nav class="main-nav" aria-label="Navegação principal">
+        <button class="nav-button active" type="button" data-view-target="dashboard">Painel</button>
+        <button class="nav-button" type="button" data-view-target="charges">Cobranças</button>
+    </nav>
+    <button class="secondary-button" id="open-client-dialog" type="button">Novo cliente</button>
+</header>
+
+<main class="app-main">
+    <section id="dashboard-view" class="view" aria-labelledby="dashboard-title">
+        <div class="page-heading">
+            <div>
+                <p class="eyebrow">Resumo financeiro</p>
+                <h1 id="dashboard-title">Painel</h1>
+                <p class="subtle" id="reference-date">Atualizando posição...</p>
+            </div>
+            <button class="primary-button" type="button" data-open-charge>Novo lançamento</button>
+        </div>
+
+        <div id="dashboard-status" class="status-line" role="status" aria-live="polite">Carregando resumo...</div>
+        <div id="summary-grid" class="summary-grid" aria-label="Resumo das cobranças" hidden></div>
+
+        <section class="content-section" aria-labelledby="recent-title">
+            <div class="section-heading">
+                <div>
+                    <h2 id="recent-title">Cobranças recentes</h2>
+                    <p class="subtle">Últimos lançamentos registrados</p>
+                </div>
+                <button class="text-button" type="button" data-view-target="charges">Ver todas</button>
+            </div>
+            <div id="recent-status" class="status-line" role="status" aria-live="polite"></div>
+            <div id="recent-list" class="charge-list"></div>
+        </section>
+    </section>
+
+    <section id="charges-view" class="view" aria-labelledby="charges-title" hidden>
+        <div class="page-heading">
+            <div>
+                <p class="eyebrow">Operação</p>
+                <h1 id="charges-title">Cobranças</h1>
+                <p class="subtle">Consulte, filtre e acompanhe cada lançamento.</p>
+            </div>
+            <button class="primary-button" type="button" data-open-charge>Nova cobrança</button>
+        </div>
+
+        <form id="charge-filters" class="filter-bar">
+            <label>
+                Condição
+                <select id="condition-filter" name="condition">
+                    <option value="">Todas</option>
+                    <option value="PENDING">Pendente</option>
+                    <option value="OVERDUE">Em atraso</option>
+                    <option value="PAID">Paga</option>
+                    <option value="CANCELED">Cancelada</option>
+                </select>
+            </label>
+            <label>
+                Cliente
+                <select id="client-filter" name="clientId">
+                    <option value="">Todos os clientes</option>
+                </select>
+            </label>
+            <button class="secondary-button" type="submit">Aplicar filtros</button>
+        </form>
+
+        <div id="charges-status" class="status-line" role="status" aria-live="polite"></div>
+        <div id="charges-list" class="charge-list"></div>
+        <nav id="pagination" class="pagination" aria-label="Paginação de cobranças" hidden>
+            <button id="previous-page" class="secondary-button" type="button">Anterior</button>
+            <span id="page-label"></span>
+            <button id="next-page" class="secondary-button" type="button">Próxima</button>
+        </nav>
+    </section>
+
+    <section id="detail-view" class="view" aria-labelledby="detail-title" hidden>
+        <button id="back-to-charges" class="text-button back-button" type="button">Voltar para cobranças</button>
+        <div id="detail-status" class="status-line" role="status" aria-live="polite"></div>
+        <div id="detail-content" hidden>
+            <div class="page-heading detail-heading">
+                <div>
+                    <p class="eyebrow">Detalhe da cobrança</p>
+                    <h1 id="detail-title"></h1>
+                    <div id="detail-condition"></div>
+                </div>
+                <div id="detail-actions" class="action-row"></div>
+            </div>
+            <div class="detail-grid">
+                <section class="detail-block" aria-labelledby="charge-data-title">
+                    <h2 id="charge-data-title">Cobrança</h2>
+                    <dl id="charge-data" class="data-list"></dl>
+                </section>
+                <section class="detail-block" aria-labelledby="client-data-title">
+                    <h2 id="client-data-title">Cliente</h2>
+                    <dl id="client-data" class="data-list"></dl>
+                </section>
+            </div>
+            <section class="content-section" aria-labelledby="events-title">
+                <div class="section-heading">
+                    <h2 id="events-title">Histórico</h2>
+                </div>
+                <ol id="events-list" class="timeline"></ol>
+            </section>
+        </div>
+    </section>
+</main>
+
+<dialog id="client-dialog" aria-labelledby="client-dialog-title">
+    <form id="client-form" class="dialog-form">
+        <div class="dialog-heading">
+            <div>
+                <p class="eyebrow">Cadastro</p>
+                <h2 id="client-dialog-title">Novo cliente</h2>
+            </div>
+            <button class="close-button" type="button" data-close-dialog aria-label="Fechar">×</button>
+        </div>
+        <label>Nome <input name="name" maxlength="120" required autocomplete="name"></label>
+        <label>E-mail <input name="email" type="email" maxlength="254" required autocomplete="email"></label>
+        <div class="form-error" role="alert"></div>
+        <div class="dialog-actions">
+            <button class="secondary-button" type="button" data-close-dialog>Cancelar</button>
+            <button class="primary-button" type="submit">Cadastrar</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="charge-dialog" aria-labelledby="charge-dialog-title">
+    <form id="charge-form" class="dialog-form">
+        <div class="dialog-heading">
+            <div>
+                <p class="eyebrow">Lançamento</p>
+                <h2 id="charge-dialog-title">Nova cobrança</h2>
+            </div>
+            <button class="close-button" type="button" data-close-dialog aria-label="Fechar">×</button>
+        </div>
+        <label>Cliente <select name="clientId" id="charge-client" required></select></label>
+        <label>Descrição <input name="description" maxlength="200" required></label>
+        <div class="field-row">
+            <label>Valor <input name="amount" type="number" min="0.01" max="1000000" step="0.01" required inputmode="decimal"></label>
+            <label>Vencimento <input name="dueDate" type="date" required></label>
+        </div>
+        <div class="form-error" role="alert"></div>
+        <div class="dialog-actions">
+            <button class="secondary-button" type="button" data-close-dialog>Cancelar</button>
+            <button class="primary-button" type="submit">Criar cobrança</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="confirm-dialog" aria-labelledby="confirm-title">
+    <div class="dialog-form compact-dialog">
+        <div>
+            <p class="eyebrow">Confirmação</p>
+            <h2 id="confirm-title">Cancelar cobrança?</h2>
+            <p class="subtle">Esta ação altera o estado da cobrança e não pode ser desfeita.</p>
+        </div>
+        <div class="dialog-actions">
+            <button id="dismiss-cancellation" class="secondary-button" type="button">Manter cobrança</button>
+            <button id="confirm-cancellation" class="danger-button" type="button">Confirmar cancelamento</button>
+        </div>
+    </div>
+</dialog>
+
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

@@ -91,6 +91,8 @@ Se `status = PENDING` e `due_date < hoje` na zona `America/Sao_Paulo`, a API exi
 
 Exemplo de criação: `POST /charges` com `{ "clientId": "<uuid>", "description": "Assinatura de setembro", "amount": 149.90, "dueDate": "2026-10-10" }`. Resposta inclui `id`, `status`, `condition`, `amount`, `dueDate`, `createdAt` e resumo do cliente. `GET /charges` usa `condition=PENDING|OVERDUE|PAID|CANCELED`; paginação tem máximo de 100 itens.
 
+`GET /dashboard/summary` retorna `referenceDate` e os objetos `pending`, `overdue`, `paid`, `canceled` e `receivable`, cada um com `count` e `amount` numéricos. `receivable` soma as cobranças persistidas como `PENDING`, incluindo as vencidas e excluindo pagas e canceladas. A data de referência usa `America/Sao_Paulo`.
+
 Erros: `400` para payload, formato, limite ou chave ausente; `404` para identificador inexistente; `409` para transição inválida, chave reaproveitada com outra cobrança ou conflito concorrente. Resposta uniforme `application/problem+json` com `type`, `title`, `status`, `detail`, `instance`, `code`, `traceId`; validações acrescentam `fieldErrors`. Nunca exibir stack trace ao usuário. Documentar contrato no README e adicionar OpenAPI somente se contribuir para a demonstração.
 
 ## 7. Interface
