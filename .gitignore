@@ -6,6 +6,12 @@ target/
 .project
 .settings/
 .env
+.env.*
+!.env.example
+*.jks
+*.p12
+*.pem
+*.key
 *.log
 .DS_Store
 Thumbs.db

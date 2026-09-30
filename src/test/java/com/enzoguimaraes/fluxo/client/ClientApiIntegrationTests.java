@@ -139,6 +139,21 @@ class ClientApiIntegrationTests {
         assertThat(errorFields(body)).contains("size");
     }
 
+    @Test
+    void returnsStandardProblemsForUnknownResourceAndUnsupportedMethod() throws Exception {
+        var unknown = get("/api/v1/unknown-resource");
+        var unsupported = httpClient.send(
+                HttpRequest.newBuilder(uri("/api/v1/dashboard/summary"))
+                        .POST(HttpRequest.BodyPublishers.noBody())
+                        .build(),
+                HttpResponse.BodyHandlers.ofString()
+        );
+
+        assertProblem(unknown, json(unknown), 404, "RESOURCE_NOT_FOUND");
+        assertProblem(unsupported, json(unsupported), 405, "METHOD_NOT_ALLOWED");
+        assertThat(unsupported.headers().firstValue("Allow").orElseThrow()).contains("GET");
+    }
+
     private HttpResponse<String> postClient(String name, String email) throws Exception {
         var payload = jsonMapper.writeValueAsString(new CreateClientRequest(name, email));
         var request = HttpRequest.newBuilder(uri("/api/v1/clients"))

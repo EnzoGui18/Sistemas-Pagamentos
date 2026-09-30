@@ -1,64 +1,289 @@
-Fluxo
-Gestão de cobranças e pagamentos simulados com Java e Spring Boot.
-O Fluxo é um projeto de portfólio para organizar clientes e cobranças, acompanhar valores a receber e registrar pagamentos simulados. Seu foco está na implementação de regras de negócio, no desenho de APIs REST e na qualidade de um sistema que lida com valores monetários.
-Status: em desenvolvimento. O pagamento é apenas uma simulação: o projeto não movimenta dinheiro nem se conecta a instituições financeiras. Use somente dados fictícios.
+# Fluxo
 
-O que o sistema fará
-- Cadastrar e consultar clientes.
-- Criar, listar, filtrar e detalhar cobranças.
-- Identificar cobranças pendentes, atrasadas, pagas e canceladas.
-- Simular um pagamento integral ou cancelar uma cobrança pendente.
-- Consultar o histórico de eventos de cada cobrança.
-- Visualizar indicadores de valores e quantidades em um painel web.
-Exemplo de fluxo
-1. Cadastrar um cliente fictício.
-2. Criar uma cobrança de R$ 149,90, com data de vencimento.
-3. Consultar a cobrança e sua condição atual no painel.
-4. Simular o pagamento e verificar o evento no histórico.
-5. Repetir a requisição com a mesma chave de idempotência e confirmar que não foi criado um segundo pagamento.
-Tecnologias previstas
-Área	Tecnologias
-Backend	Java 21, Spring Boot, Spring MVC, Spring Data JPA, Bean Validation
-Banco de dados	PostgreSQL e Flyway
-Frontend	HTML, CSS e JavaScript
-Testes	JUnit, Spring Test e Testcontainers
-Ambiente e automação	Maven, Docker Compose e GitHub Actions
-Operação	Spring Boot Actuator para verificação de saúde
+[![CI](https://github.com/EnzoGui18/Sistemas-Pagamentos/actions/workflows/ci.yml/badge.svg)](https://github.com/EnzoGui18/Sistemas-Pagamentos/actions/workflows/ci.yml)
 
+Sistema de portfólio para gerenciar clientes fictícios, cobranças em BRL e pagamentos integralmente simulados. O Fluxo reúne API REST, regras transacionais, PostgreSQL e uma interface web responsiva no mesmo monólito modular.
 
-Regras de negócio
-Uma cobrança começa como PENDING e pode ser paga ou cancelada. Uma cobrança paga ou cancelada não aceita outra mudança de estado. Cobranças pendentes com vencimento anterior à data atual são apresentadas como OVERDUE; essa condição é calculada, sem gravar um novo estado no banco.
-Os valores são tratados com BigDecimal, e cada cobrança aceita apenas um pagamento integral simulado. A API usará uma chave de idempotência para reconhecer a repetição de um pagamento concluído. Transações e restrições no banco protegerão a consistência dos pagamentos e do histórico.
-Arquitetura
-A aplicação será um monólito modular: interface e API no mesmo projeto, com responsabilidades divididas por domínio (client, charge, payment e dashboard). A lógica de negócio ficará nos serviços; os controladores cuidarão do contrato HTTP e os repositórios, da persistência.
+> O sistema não processa dinheiro real e não se conecta a bancos, adquirentes, Pix ou cartões. Use somente dados fictícios.
+
+## Funcionalidades
+
+- Cadastro e consulta paginada de clientes.
+- Criação, listagem, filtros e detalhamento de cobranças.
+- Condições `PENDING`, `OVERDUE`, `PAID` e `CANCELED`.
+- Pagamento integral simulado com idempotência.
+- Cancelamento e histórico transacional de eventos.
+- Dashboard com quantidades e valores por condição.
+- Interface web responsiva, sem framework frontend.
+- Erros HTTP em `application/problem+json` com `traceId`.
+- Healthcheck de liveness/readiness com Spring Boot Actuator.
+
+## Stack
+
+| Área | Tecnologias |
+| --- | --- |
+| Backend | Java 21, Spring Boot 4.1.1, Spring MVC, Validation |
+| Persistência | Spring Data JPA, PostgreSQL 17, Flyway |
+| Frontend | HTML, CSS e JavaScript puro |
+| Testes | JUnit, Spring Test, Testcontainers/PostgreSQL |
+| Operação | Maven, Docker, Docker Compose, Actuator |
+| CI | GitHub Actions |
+
+## Pré-requisitos
+
+Para a execução recomendada:
+
+- Docker Desktop ou Docker Engine com Compose v2.
+- Porta `8080` livre em `localhost`.
+
+Para executar sem o container da aplicação:
+
+- JDK 21.
+- Maven 3.9 ou superior.
+- PostgreSQL 17 acessível pela máquina host.
+- Docker disponível para os testes de integração.
+
+## Início rápido
+
+Na raiz do repositório:
+
+```bash
+docker compose up --build
+```
+
+O Compose aguarda o PostgreSQL ficar saudável, inicia a aplicação, aplica a migration Flyway e valida o mapeamento JPA. O banco fica acessível somente pela rede interna do Compose; apenas a aplicação publica uma porta no host.
+
+Depois da inicialização:
+
+- Interface: <http://localhost:8080>
+- Healthcheck: <http://localhost:8080/actuator/health>
+- Readiness: <http://localhost:8080/actuator/health/readiness>
+
+Para acompanhar e encerrar:
+
+```bash
+docker compose ps
+docker compose logs -f app
+docker compose down
+```
+
+`docker compose down` preserva o banco. Para também apagar o volume e todos os dados locais, use `docker compose down -v`.
+
+## Configuração
+
+Os valores padrão do Compose são apenas para desenvolvimento local. Para personalizá-los:
+
+```bash
+cp .env.example .env
+```
+
+No PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+| Variável | Padrão local | Finalidade |
+| --- | --- | --- |
+| `POSTGRES_DB` | `fluxo` | Banco criado pelo container |
+| `POSTGRES_USER` | `fluxo` | Usuário local do PostgreSQL |
+| `POSTGRES_PASSWORD` | `fluxo_local` | Senha local do PostgreSQL |
+| `DB_URL` | Depende do modo de execução | URL JDBC |
+| `DB_USERNAME` | `fluxo` | Usuário usado pela aplicação |
+| `DB_PASSWORD` | `fluxo_local` | Senha usada pela aplicação |
+| `DB_POOL_SIZE` | `10` | Máximo de conexões da aplicação |
+| `SERVER_PORT` | `8080` | Porta HTTP da aplicação |
+
+O arquivo `.env` é ignorado pelo Git. Não use os valores locais em ambientes publicados.
+
+### Aplicação pelo Maven
+
+```bash
+mvn spring-boot:run
+```
+
+Nesse modo, a configuração padrão usa `jdbc:postgresql://localhost:5432/fluxo`. Defina `DB_URL`, `DB_USERNAME` e `DB_PASSWORD` caso seu PostgreSQL use outro endereço ou credenciais. O banco do Compose não publica porta no host; ele existe apenas para a aplicação em container.
+
+## Testes
+
+A suíte usa PostgreSQL real por meio do Testcontainers. O Docker precisa estar disponível:
+
+```bash
+mvn -B -ntp verify
+```
+
+Para executar somente um conjunto:
+
+```bash
+mvn -B -ntp -Dtest=DashboardApiIntegrationTests test
+mvn -B -ntp -Dtest=PaymentAndCancellationIntegrationTests test
+```
+
+Os testes cobrem persistência, validações, paginação, mudança de dia, migrations, idempotência, rollback e corridas reais entre pagamento e cancelamento.
+
+## Exemplos de API
+
+Os exemplos usam dados fictícios. No PowerShell, execute `curl.exe` para evitar o alias de `Invoke-WebRequest`.
+
+### Criar cliente
+
+```bash
+curl -i -X POST http://localhost:8080/api/v1/clients \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Cliente Demonstração","email":"cliente.demo@example.com"}'
+```
+
+Guarde o `id` retornado como `CLIENT_ID`.
+
+### Criar cobrança
+
+```bash
+curl -i -X POST http://localhost:8080/api/v1/charges \
+  -H "Content-Type: application/json" \
+  -d '{"clientId":"CLIENT_ID","description":"Serviço de demonstração","amount":149.90,"dueDate":"2030-12-15"}'
+```
+
+Guarde o `id` retornado como `CHARGE_ID`. A data precisa ser hoje ou futura na zona `America/Sao_Paulo`.
+
+### Consultar e filtrar cobranças
+
+```bash
+curl "http://localhost:8080/api/v1/charges?condition=PENDING&page=0&size=20"
+curl http://localhost:8080/api/v1/charges/CHARGE_ID
+curl http://localhost:8080/api/v1/charges/CHARGE_ID/events
+```
+
+### Simular pagamento
+
+```bash
+curl -i -X POST http://localhost:8080/api/v1/charges/CHARGE_ID/payments \
+  -H "Idempotency-Key: demo-payment-001"
+```
+
+A primeira conclusão retorna `201`. Repetir a mesma chave para a mesma cobrança retorna `200` e o pagamento existente. Usar a chave em outra cobrança retorna `409`.
+
+### Cancelar cobrança
+
+```bash
+curl -i -X POST http://localhost:8080/api/v1/charges/CHARGE_ID/cancellation
+```
+
+### Consultar dashboard
+
+```bash
+curl http://localhost:8080/api/v1/dashboard/summary
+```
+
+## Endpoints
+
+| Método | Rota | Resultado principal |
+| --- | --- | --- |
+| `POST` | `/api/v1/clients` | Cria cliente, `201 + Location` |
+| `GET` | `/api/v1/clients` | Busca paginada por nome/e-mail |
+| `POST` | `/api/v1/charges` | Cria cobrança, `201 + Location` |
+| `GET` | `/api/v1/charges` | Filtra por condição e cliente |
+| `GET` | `/api/v1/charges/{id}` | Detalha cobrança |
+| `POST` | `/api/v1/charges/{id}/payments` | Simula pagamento, `201` ou replay `200` |
+| `POST` | `/api/v1/charges/{id}/cancellation` | Cancela cobrança pendente |
+| `GET` | `/api/v1/charges/{id}/events` | Retorna histórico ordenado |
+| `GET` | `/api/v1/dashboard/summary` | Retorna indicadores do painel |
+| `GET` | `/actuator/health` | Saúde geral sem detalhes internos |
+| `GET` | `/actuator/health/readiness` | Prontidão da aplicação e banco |
+
+Paginação começa em zero e aceita no máximo 100 elementos por página.
+
+## Estados e idempotência
+
+```text
+                 pagamento
+PENDING --------------------------> PAID
+   |
+   | cancelamento
+   v
+CANCELED
+```
+
+- `OVERDUE` não é persistido. É exibido quando uma cobrança `PENDING` vence antes do dia atual em São Paulo.
+- Uma cobrança pendente pode ser paga ou cancelada mesmo estando vencida.
+- `PAID` e `CANCELED` são estados terminais.
+- O valor do pagamento é copiado da cobrança pelo servidor.
+- Pagamento, mudança de estado e evento são confirmados na mesma transação.
+- Locks de banco, `@Version` e constraints `UNIQUE` impedem duas transições vencedoras.
+- A idempotência cobre pagamentos concluídos; o MVP não promete replay de erros anteriores.
+
+## Erros HTTP
+
+Erros usam `application/problem+json` e incluem `code` e `traceId`. Validações também incluem `fieldErrors`.
+
+```json
+{
+  "type": "about:blank",
+  "title": "Conflict",
+  "status": 409,
+  "detail": "Charge is not pending",
+  "instance": "/api/v1/charges/00000000-0000-0000-0000-000000000000/cancellation",
+  "code": "INVALID_CHARGE_TRANSITION",
+  "traceId": "exemplo"
+}
+```
+
+Stack traces, payloads, e-mails, senhas e chaves de idempotência não são enviados nas respostas nem registrados pelos logs HTTP.
+
+## Arquitetura
+
 ```mermaid
 flowchart LR
-    UI[Interface web] --> API[API REST]
+    Browser[HTML / CSS / JavaScript] --> API[Controllers REST]
     API --> Services[Serviços de domínio]
-    Services --> DB[(PostgreSQL)]
+    Services --> Repositories[Repositories JPA / SQL]
+    Repositories --> PostgreSQL[(PostgreSQL)]
+    Services --> Events[charge_events]
 ```
-As tabelas principais serão clients, charges, payments e charge_events. As alterações de estrutura do banco serão versionadas com Flyway.
-API planejada
-Método	Rota	Finalidade
-POST	/api/v1/clients	Cadastrar cliente
-GET	/api/v1/clients	Consultar clientes
-POST	/api/v1/charges	Criar cobrança
-GET	/api/v1/charges	Listar e filtrar cobranças
-GET	/api/v1/charges/{id}	Detalhar cobrança
-POST	/api/v1/charges/{id}/payments	Simular pagamento
-POST	/api/v1/charges/{id}/cancellation	Cancelar cobrança
-GET	/api/v1/charges/{id}/events	Consultar histórico
-GET	/api/v1/dashboard/summary	Consultar indicadores
 
+O projeto é um monólito modular com os pacotes `client`, `charge`, `payment`, `dashboard` e `shared`. Controllers cuidam do contrato HTTP, services concentram regras e transações e repositories tratam persistência. Entidades JPA não são retornadas pela API.
 
-O contrato será revisado conforme cada etapa for implementada. Respostas de erro usarão um formato consistente, com status HTTP e detalhes úteis para o cliente da API.
-Desenvolvimento
-- [ ] Estrutura do projeto, banco, migrações e ambiente local.
-- [ ] Cadastro de clientes e validações.
-- [ ] Cobranças, filtros e condição de atraso.
-- [ ] Pagamentos simulados, cancelamento, idempotência e histórico.
-- [ ] Painel e interface web responsiva.
-- [ ] Testes de integração, pipeline e documentação final de execução.
-As instruções para rodar o projeto, exemplos de requisições e imagens da interface serão adicionados após a implementação e validação das respectivas etapas.
-Objetivo técnico
-Este projeto foi pensado para demonstrar desenvolvimento web com Java, orientação a objetos, APIs REST, banco relacional, versionamento de esquema, testes, tratamento de erros, concorrência, observabilidade básica e entrega automatizada. As decisões detalhadas e os critérios de aceite estão em [`docs/architecture.md`](docs/architecture.md).
+## Decisões e trade-offs
+
+- **Monólito modular:** reduz custo operacional sem misturar responsabilidades de domínio.
+- **PostgreSQL como requisito:** permite constraints, locks e agregações consistentes; não há banco em memória alternativo.
+- **Flyway + `ddl-auto=validate`:** o schema é versionado e o Hibernate apenas verifica compatibilidade.
+- **`OVERDUE` derivado:** evita job diário e estado duplicado, mas as consultas dependem da data de negócio.
+- **Advisory lock do PostgreSQL:** garante idempotência concorrente com simplicidade, ao custo de acoplamento ao banco escolhido.
+- **Frontend sem build:** facilita execução e demonstração, mas exige disciplina manual na organização do JavaScript.
+- **Pagamento simulado:** exercita atomicidade e concorrência sem integrar serviços financeiros reais.
+
+Decisões detalhadas estão em [docs/ARQUITETURA.md](docs/ARQUITETURA.md).
+
+## Logs e saúde
+
+Cada resposta contém `X-Trace-Id`. Os logs HTTP registram somente método, padrão da rota, status, duração e trace ID. Caminhos sem rota reconhecida recebem `<unmatched>`; dados do cliente, parâmetros, payloads, credenciais e headers não são registrados.
+
+O Compose considera a aplicação saudável apenas quando a readiness confirma aplicação e banco disponíveis.
+
+## Integração contínua
+
+O workflow [.github/workflows/ci.yml](.github/workflows/ci.yml) executa em `push` e `pull_request`:
+
+1. Checkout do repositório.
+2. Configuração do Java 21 com cache Maven.
+3. Verificação da disponibilidade do Docker.
+4. `mvn -B -ntp verify`, incluindo Testcontainers/PostgreSQL.
+
+O workflow precisa ser observado na aba **Actions** após o push. Uma validação local não comprova que uma execução específica no GitHub terminou com sucesso.
+
+## Limitações atuais
+
+- Sem autenticação, autorização ou isolamento entre usuários.
+- Sem CPF/CNPJ e sem dados pessoais reais.
+- Sem pagamento real, parcelas, juros, webhooks ou notificações.
+- Um único processo e um único banco; não há mensageria ou cache distribuído.
+- Chaves de idempotência não expiram no MVP.
+- Sem OpenAPI e sem teste automatizado de acessibilidade em navegador.
+
+## Melhorias futuras
+
+- Autenticação e autorização antes de qualquer exposição pública.
+- OpenAPI e testes de contrato.
+- Auditoria e retenção configurável para chaves idempotentes.
+- Testes automatizados de acessibilidade e fluxo visual.
+- Métricas operacionais e política estruturada de retenção de logs.

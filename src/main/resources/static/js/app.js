@@ -199,31 +199,37 @@ async function loadCharges() {
 
 function renderChargeList(container, charges) {
     container.replaceChildren();
+    container.removeAttribute("role");
     if (charges.length === 0) {
         container.append(textElement("p", "empty-state", "Nenhuma cobrança por aqui."));
         return;
     }
+    container.setAttribute("role", "table");
     const header = element("div", "charge-table-head");
+    header.setAttribute("role", "row");
     ["Cobrança", "Cliente", "Vencimento", "Valor", "Situação"].forEach((label) => {
-        header.append(textElement("span", "", label));
+        const column = textElement("span", "", label);
+        column.setAttribute("role", "columnheader");
+        header.append(column);
     });
     container.append(header);
     charges.forEach((charge) => {
         const row = element("article", "charge-row");
+        row.setAttribute("role", "row");
         const title = document.createElement("button");
         title.type = "button";
         title.className = "charge-link";
         title.textContent = charge.description;
         title.addEventListener("click", () => showDetail(charge.id));
         const titleWrap = element("div", "row-title");
+        titleWrap.setAttribute("role", "cell");
         titleWrap.append(title);
-        row.append(
-            titleWrap,
-            textElement("span", "row-client row-secondary", charge.client.name),
-            textElement("span", "row-due row-secondary", `Vence ${formatDate(charge.dueDate)}`),
-            textElement("span", "amount", currency.format(charge.amount)),
-            conditionBadge(charge.condition)
-        );
+        const client = textElement("span", "row-client row-secondary", charge.client.name);
+        const dueDate = textElement("span", "row-due row-secondary", `Vence ${formatDate(charge.dueDate)}`);
+        const amount = textElement("span", "amount", currency.format(charge.amount));
+        const condition = conditionBadge(charge.condition);
+        [client, dueDate, amount, condition].forEach((cell) => cell.setAttribute("role", "cell"));
+        row.append(titleWrap, client, dueDate, amount, condition);
         container.append(row);
     });
 }

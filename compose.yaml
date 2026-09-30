@@ -5,8 +5,6 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-fluxo}
       POSTGRES_USER: ${POSTGRES_USER:-fluxo}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fluxo_local}
-    ports:
-      - "5432:5432"
     volumes:
       - fluxo_postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -15,6 +13,7 @@ services:
       timeout: 5s
       retries: 10
       start_period: 5s
+    restart: unless-stopped
 
   app:
     build:
@@ -24,16 +23,24 @@ services:
       DB_USERNAME: ${DB_USERNAME:-fluxo}
       DB_PASSWORD: ${DB_PASSWORD:-fluxo_local}
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     depends_on:
       db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O - http://localhost:8080/actuator/health | grep -q '\"status\":\"UP\"'"]
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8080/actuator/health/readiness | grep -q '\"status\":\"UP\"'"]
       interval: 10s
       timeout: 5s
       retries: 12
       start_period: 20s
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    stop_grace_period: 15s
 
 volumes:
   fluxo_postgres_data:
