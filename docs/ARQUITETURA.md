@@ -29,9 +29,9 @@ Autenticação, multiempresa, CPF/CNPJ, cartão/Pix/boleto real, pagamentos parc
 
 - Java 21; Spring Boot 4.1.1; Maven.
 - Spring MVC, Spring Data JPA, Bean Validation, Actuator; PostgreSQL; Flyway.
-- Testes com JUnit, Spring Test e Testcontainers/PostgreSQL nas integrações; Docker Compose no ambiente local.
+- Testes com JUnit, Spring Test e Testcontainers/PostgreSQL nas integrações; Playwright e axe no fluxo de navegador desktop/mobile; Docker Compose no ambiente local.
 - Frontend estático servido pelo próprio Spring Boot em `/`, com `fetch` para `/api/v1`; sem build de SPA.
-- GitHub Actions executa `mvn verify` em push e pull request; README documenta execução e decisões.
+- GitHub Actions executa `mvn verify` e o fluxo Playwright/axe em push, pull request ou disparo manual; README documenta execução e decisões.
 - Monólito modular, um deploy e um banco. Camadas por domínio: `client`, `charge`, `payment`, `dashboard`, `shared`. Em cada domínio, controller/DTO, service, repository/entity. Controllers não acessam repositories; entidades JPA não são respostas HTTP.
 
 ```

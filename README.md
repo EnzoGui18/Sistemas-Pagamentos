@@ -25,7 +25,7 @@ Sistema de portfólio para gerenciar clientes fictícios, cobranças em BRL e pa
 | Backend | Java 21, Spring Boot 4.1.1, Spring MVC, Validation |
 | Persistência | Spring Data JPA, PostgreSQL 17, Flyway |
 | Frontend | HTML, CSS e JavaScript puro |
-| Testes | JUnit, Spring Test, Testcontainers/PostgreSQL |
+| Testes | JUnit, Spring Test, Testcontainers/PostgreSQL, Playwright e axe |
 | Operação | Maven, Docker, Docker Compose, Actuator |
 | CI | GitHub Actions |
 
@@ -42,6 +42,7 @@ Para executar sem o container da aplicação:
 - Maven 3.9 ou superior.
 - PostgreSQL 17 acessível pela máquina host.
 - Docker disponível para os testes de integração.
+- Node.js 24 para os testes E2E e de acessibilidade.
 
 ## Início rápido
 
@@ -120,6 +121,19 @@ mvn -B -ntp -Dtest=PaymentAndCancellationIntegrationTests test
 ```
 
 Os testes cobrem persistência, validações, paginação, mudança de dia, migrations, idempotência, rollback e corridas reais entre pagamento e cancelamento.
+
+### Navegador e acessibilidade
+
+Com a aplicação iniciada pelo Compose, instale o Chromium gerenciado pelo Playwright e execute:
+
+```bash
+cd e2e
+npm ci
+npx playwright install chromium
+npm test
+```
+
+O fluxo roda em Chromium desktop e em viewport mobile Pixel 7. Ele cadastra cliente, cria e paga uma cobrança, verifica overflow horizontal e audita painel, formulários e detalhe com axe nas regras WCAG 2 A/AA. Screenshots, vídeos e traces são gerados como evidência real quando aplicável e ficam fora do Git.
 
 ## Exemplos de API
 
@@ -262,12 +276,15 @@ O Compose considera a aplicação saudável apenas quando a readiness confirma a
 
 ## Integração contínua
 
-O workflow [.github/workflows/ci.yml](.github/workflows/ci.yml) executa em `push` e `pull_request`:
+O workflow [.github/workflows/ci.yml](.github/workflows/ci.yml) executa em `push`, `pull_request` ou disparo manual:
 
 1. Checkout do repositório.
 2. Configuração do Java 21 com cache Maven.
 3. Verificação da disponibilidade do Docker.
 4. `mvn -B -ntp verify`, incluindo Testcontainers/PostgreSQL.
+5. Inicialização da aplicação completa com Compose.
+6. Fluxo E2E desktop/mobile e auditoria axe no Chromium.
+7. Publicação do relatório Playwright como artefato por sete dias.
 
 O workflow precisa ser observado na aba **Actions** após o push. Uma validação local não comprova que uma execução específica no GitHub terminou com sucesso.
 
@@ -278,12 +295,12 @@ O workflow precisa ser observado na aba **Actions** após o push. Uma validaçã
 - Sem pagamento real, parcelas, juros, webhooks ou notificações.
 - Um único processo e um único banco; não há mensageria ou cache distribuído.
 - Chaves de idempotência não expiram no MVP.
-- Sem OpenAPI e sem teste automatizado de acessibilidade em navegador.
+- Sem OpenAPI e sem testes em Firefox ou WebKit.
 
 ## Melhorias futuras
 
 - Autenticação e autorização antes de qualquer exposição pública.
 - OpenAPI e testes de contrato.
 - Auditoria e retenção configurável para chaves idempotentes.
-- Testes automatizados de acessibilidade e fluxo visual.
+- Ampliar os testes visuais para Firefox, WebKit e leitores de tela reais.
 - Métricas operacionais e política estruturada de retenção de logs.
